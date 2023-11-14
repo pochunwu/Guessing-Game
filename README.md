@@ -2,7 +2,7 @@
 UCSD CSE 230 (Fall 2023) Final Project
 ## Members
 - Xujie Chen
-- Xioachuan Yu
+- Xiaochuan Yu
 - Runlong Su
 - Po-Chun Wu
 ## Proposal

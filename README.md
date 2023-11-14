@@ -1,4 +1,4 @@
-# Multi-Domain Guessing Games with Solvers
+# Multi-Domain Guessing Game with Solver
 UCSD CSE 230 (Fall 2023) Final Project
 ## Members
 - Xujie Chen

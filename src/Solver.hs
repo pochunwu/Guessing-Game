@@ -11,11 +11,8 @@ import Data.Ord (comparing)
 import Prelude hiding (words)
 
 type WordList = [String]
-
 type FrequencyMap = Map Char Int
-
 type FrequencyMapF = Map Char Double
-
 type WordScorePair = (String, Double)
 
 calculateTotalUniqueLetters :: FrequencyMap -> Int
@@ -36,45 +33,35 @@ generateFreqencyMap wordList = let fm = calculateLetterFrequencies wordList
     in normalizeFrequencies fm (calculateTotalUniqueLetters fm)
 
 -------------------------------------------------------------------------------
-
 -- | Filter possible words according to impossible to appear letters
-
 -------------------------------------------------------------------------------
 filterWordsImpossible :: WordList -> [Char] -> WordList
 filterWordsImpossible words disallowed =
   [word | word <- words, all (`notElem` disallowed) word]
 
 -------------------------------------------------------------------------------
-
 -- | Filter possible words that cannot be presented in given places per letter
-
 -------------------------------------------------------------------------------
 filterWordsIncorrectPlace :: WordList -> Map Char [Int] -> WordList
 filterWordsIncorrectPlace words constraints =
   [word | word <- words, all (\(index, char) -> notElem index (Map.findWithDefault [] char constraints)) (zip [0 ..] word)]
 
 -------------------------------------------------------------------------------
-
 -- | Filter possible words according to incorrectly placed letters
-
 -------------------------------------------------------------------------------
 filterWordsExistButIncorrectPlace :: WordList -> Map Char [Int] -> WordList
 filterWordsExistButIncorrectPlace words constraints =
   filterWordsMustContain (filterWordsIncorrectPlace words constraints) (Map.keys constraints)
 
 -------------------------------------------------------------------------------
-
 -- | Filter possible words that must contain letters in the list
-
 -------------------------------------------------------------------------------
 filterWordsMustContain :: WordList -> [Char] -> WordList
 filterWordsMustContain words letters =
   [word | word <- words, all (`elem` word) letters]
 
 -------------------------------------------------------------------------------
-
 -- | Filter possible words according to correctly placed letters
-
 -------------------------------------------------------------------------------
 filterWordsCorrectPlace :: WordList -> String -> WordList
 filterWordsCorrectPlace words pattern =
@@ -85,10 +72,8 @@ filterWordsCorrectPlace words pattern =
     match (w, p) = p == '_' || w == p
 
 -------------------------------------------------------------------------------
-
 -- | Rank possible guesses according to correctly placed letters
 -- | Algorithm 1: Sort according to unknown letter frequencies
-
 -------------------------------------------------------------------------------
 sortWords :: WordList -> String -> WordList
 sortWords words correctPattern = map fst (sortWordsByScore (scoreWords words correctPattern (generateFreqencyMap words)))
@@ -119,8 +104,8 @@ fromList [('a',0.1111111111111111),('c',5.555555555555555e-2),('e',0.22222222222
 >>> let pattern = "a__le" in filterWordsCorrectPlace ["save", "test", "chest", "player", "apple", "orange", "banana", "grape", "blueberry"] pattern
 ["apple"]
 
->>> filterWordsMustContain ["save","test","chest","blueberry","nation"] "aon"
-["nation"]
+>>> filterWordsMustContain ["save","test","chest","blueberry","nation", "canon"] "aon"
+["nation","canon"]
 
 >>> let constraints = Map.fromList [('a', [0, 2]), ('n', [2]),  ('o', [0])] in (filterWordsIncorrectPlace ["save", "test", "chest", "player", "apple", "orange", "banana", "grape", "blueberry",  "nation"] constraints)
 ["save","test","chest","blueberry","nation"]

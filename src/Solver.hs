@@ -93,6 +93,18 @@ scoreWord _ _ _ = 0
 scoreWords :: [String] -> String -> FrequencyMapF -> [WordScorePair]
 scoreWords words correctPattern freqMapF = [(word, (scoreWord word correctPattern freqMapF)) | word <- words]
 
+
+-------------------------------------------------------------------------------
+-- | Generate a list of best next guesses based on current configuration
+-------------------------------------------------------------------------------
+generateNextGuessList :: WordList -> String -> Map Char [Int] -> [Char] -> WordList
+generateNextGuessList words correctPattern misplaced disallowed = sortWords allFiltered correctPattern
+    where
+       impossibleFiltered = filterWordsImpossible words disallowed
+       incorrectFiltered = filterWordsExistButIncorrectPlace impossibleFiltered misplaced
+       allFiltered = filterWordsCorrectPlace incorrectFiltered correctPattern
+
+
 {-
 --
 >>> let fm = calculateLetterFrequencies ["save", "test", "chest", "player"] in normalizeFrequencies fm (calculateTotalUniqueLetters fm)
@@ -125,5 +137,6 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 >>> sortWords ["level", "sever", "hello"]  "_e___"
 ["level","sever","hello"]
 
---
+>>> generateNextGuessList ["level", "sever", "hello"] "_e___" (Map.fromList [('l', [0, 4])]) ['v']
+["hello"]
 -}

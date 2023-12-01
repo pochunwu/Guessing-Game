@@ -79,7 +79,7 @@ sortWords :: WordList -> String -> WordList
 sortWords words correctPattern = map fst (sortWordsByScore (scoreWords words correctPattern (generateFreqencyMap words)))
 
 sortWordsByScore :: [WordScorePair] -> [WordScorePair]
-sortWordsByScore = sortBy (compare `on` snd)
+sortWordsByScore = sortBy (flip compare `on` snd)
 
 -- Scoring function:
 scoreWord :: String -> String -> FrequencyMapF -> Double
@@ -123,7 +123,7 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 [("level",0.8181818181818181),("sever",0.6363636363636364),("hello",0.5454545454545454)]
 
 >>> sortWords ["level", "sever", "hello"]  "_e___"
-["hello","sever","level"]
+["level","sever","hello"]
 
 --
 -}

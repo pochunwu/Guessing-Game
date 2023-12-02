@@ -96,6 +96,10 @@ scoreWords words correctPattern freqMapF = [(word, (scoreWord word correctPatter
 
 -------------------------------------------------------------------------------
 -- | Generate a list of best next guesses based on current configuration
+-- | Correct pattern is represented as [letter]__[letter]_ where _ means incorrect guess
+-- | Misplaced list is represented as a map from char to a list of positions, the positions are invalid placements of the character
+-- | Impossible characters are represented as a list of characters, they cannot be presented in the word
+-- | Usage: call this function on each round based on the feedback pattern this round. Notice that correctPattern may need to be accumulated across all rounds
 -------------------------------------------------------------------------------
 generateNextGuessList :: WordList -> String -> Map Char [Int] -> [Char] -> WordList
 generateNextGuessList words correctPattern misplaced disallowed = sortWords allFiltered correctPattern
@@ -137,6 +141,6 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 >>> sortWords ["level", "sever", "hello"]  "_e___"
 ["level","sever","hello"]
 
->>> generateNextGuessList ["level", "sever", "hello"] "_e___" (Map.fromList [('l', [0, 4])]) ['v']
-["hello"]
+>>> generateNextGuessList ["level", "sever", "hello", "desco", "fever", "tesla"] "_e___" (Map.fromList [('l', [0, 4])]) ['v']
+["hello","tesla"]
 -}

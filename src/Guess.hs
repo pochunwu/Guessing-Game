@@ -1,6 +1,6 @@
-module Guess where
+module Guess (play) where
 
-import Data.Char ( isSpace, toLower )
+import Data.Char ( toLower )
 
 data State =
       Correct
@@ -19,7 +19,7 @@ play :: String -> Int -> IO()
 play answer = go
   where
     go :: Int -> IO()
-    go 0 = putStrLn "Sorry, you lose 😭"
+    go 0 = putStrLn $ "Sorry, you lose 😭 \nThe answer is " ++ show answer ++ " 🌟"
     go n = do
       putStrLn $ "Attempt(s): " ++ show (maxAttempts - n + 1) ++ "/" ++ show maxAttempts ++  "\n🙏 Please make your guess: "
       input <- getLine

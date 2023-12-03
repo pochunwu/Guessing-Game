@@ -1,2 +1,9 @@
+module Main where
+
+import Test.HUnit
+import qualified Test -- import your test module
+
 main :: IO ()
-main = putStrLn "Test suite not yet implemented"
+main = do
+    _ <- Test.runTests
+    return ()

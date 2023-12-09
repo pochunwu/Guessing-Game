@@ -11,8 +11,13 @@ main = do
     putStrLn "2 - Animals"
     putStrLn "3 - US cities"
     putStrLn "4 - Names"
-    input <- readLn :: IO Int
-    result <- genRandomWord input
+    topics <- readLn :: IO Int
+    result <- genRandomWord topics
+    putStrLn "Choose Difficulty: "
+    putStrLn "3 - Hard"
+    putStrLn "5 - Medium"
+    putStrLn "7 - Easy"
+    difficulty <- readLn :: IO Int
     putStrLn $ "Word Length: " ++ show (length result)
-    play result 5
+    play result difficulty difficulty
 

@@ -4,7 +4,7 @@ module Solver where
 
 import Data.Char (toLower)
 import Data.Function (on)
-import Data.List (foldl', maximumBy, sortBy)
+import Data.List (foldl', maximumBy, sortBy, nub)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Ord (comparing)
@@ -90,9 +90,35 @@ scoreWord (x : xs) (y : ys) freqMapF
 scoreWord _ _ _ = 0
 
 -- Function to score each word and attach the score
-scoreWords :: [String] -> String -> FrequencyMapF -> [WordScorePair]
+scoreWords :: WordList -> String -> FrequencyMapF -> [WordScorePair]
 scoreWords words correctPattern freqMapF = [(word, (scoreWord word correctPattern freqMapF)) | word <- words]
 
+-- Calculate feedback for a guess and an answer
+feedbackWord :: String -> String -> String
+feedbackWord guess answer = zipWith go guess answer
+  where
+    go :: Char -> Char -> Char
+    go g a
+      | g == a          = 'y'
+      | g `elem` answer = 'm'
+      | otherwise       = 'n'
+
+-- Count feedback patterns and calculate probabilities
+feedbackProbabilities :: String -> WordList -> [Double]
+feedbackProbabilities word words = 
+    let feedbacks = map (feedbackWord word) words
+        uniqueFeedbacks = nub feedbacks
+        feedbackCounts = map (\uf -> length (filter (== uf) feedbacks)) uniqueFeedbacks
+        totalCount = sum feedbackCounts
+    in map (\count -> fromIntegral count / fromIntegral totalCount) feedbackCounts
+
+-- Calculate entropy for a word
+calculateEntropy :: [Double] -> Double
+calculateEntropy probabilities = -sum (map (\p -> p * logBase 2 p) probabilities)
+
+-- Calculate entropy for each word in the list
+calculateEntropyForWords :: WordList -> [WordScorePair]
+calculateEntropyForWords words = map (\word -> (word, calculateEntropy (feedbackProbabilities word words))) words
 
 -------------------------------------------------------------------------------
 -- | Generate a list of best next guesses based on current configuration
@@ -107,6 +133,7 @@ generateNextGuessList words correctPattern misplaced disallowed = sortWords allF
        impossibleFiltered = filterWordsImpossible words disallowed
        incorrectFiltered = filterWordsExistButIncorrectPlace impossibleFiltered misplaced
        allFiltered = filterWordsCorrectPlace incorrectFiltered correctPattern
+
 
 
 {-
@@ -143,4 +170,17 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 
 >>> generateNextGuessList ["level", "sever", "hello", "desco", "fever", "tesla"] "_e___" (Map.fromList [('l', [0, 4])]) ['v']
 ["hello","tesla"]
+
+
+>>> feedbackWord "test" "next"
+"myny"
+
+>>> feedbackWord "test" "dext"
+"myny"
+
+>>> feedbackProbabilities "test" ["test", "next", "dext", "nice"]
+[0.25,0.5,0.25]
+
+>>> calculateEntropyForWords ["test", "next", "dext", "nice"]
+[("test",1.5),("next",2.0),("dext",2.0),("nice",1.5)]
 -}

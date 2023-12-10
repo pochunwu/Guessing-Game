@@ -6,45 +6,43 @@ data State =
       Correct
     | Misplaced
     | Incorrect
+    deriving (Eq, Show)
 
-showState :: State -> Char
-showState Correct   = '🟩'
-showState Misplaced = '🟨'
-showState Incorrect = '🟥'
+-- showState :: State -> Char
+-- showState Correct   = '🟩'
+-- showState Misplaced = '🟨'
+-- showState Incorrect = '🟥'
 
-maxAttempts :: Int
-maxAttempts = 5
-
-play :: String -> Int -> IO()
+play :: String -> Int -> Int -> IO()
 play answer = go
   where
-    go :: Int -> IO()
-    go 0 = putStrLn $ "Sorry, you lose 😭 \nThe answer is " ++ show answer ++ " 🌟"
-    go n = do
+    go :: Int -> Int -> IO()
+    go _ 0 = putStrLn $ "Sorry, you lose 😭 \nThe answer is " ++ show answer ++ " 🌟"
+    go maxAttempts n = do
       putStrLn $ "Attempt(s): " ++ show (maxAttempts - n + 1) ++ "/" ++ show maxAttempts ++  "\n🙏 Please make your guess: "
       input <- getLine
       let guess = map toLower (trim input)
       if length guess /= length answer
         then do
-          putStrLn "The word length of your guess does not match the answer 🥲 . \n🥹 Please try again:"
-          go n
+          putStrLn "The word length of your guess does not match the answer 🥲 ."
+          go maxAttempts (n - 1)
       else do
           let (wordle, result) = check guess answer
-          putStrLn wordle
+          print wordle
           if result
             then do
               putStrLn "👏 Congratulation! You win 🎉"
             else do
-              go (n - 1)
+              go maxAttempts (n - 1)
 
-check :: String -> String -> (String, Bool)
+check :: String -> String -> ([State], Bool)
 check guess answer = (zipWith go guess answer, guess == answer)
   where
-    go :: Char -> Char -> Char
+    go :: Char -> Char -> State
     go g a
-      | g == a          = showState Correct
-      | g `elem` answer = showState Misplaced
-      | otherwise       = showState Incorrect
+      | g == a          = Correct
+      | g `elem` answer = Misplaced
+      | otherwise       = Incorrect
 
 -- Helper functions
 trim :: String -> String

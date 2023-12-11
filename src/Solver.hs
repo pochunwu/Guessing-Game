@@ -1,4 +1,4 @@
-module Solver where
+module Solver (calculateEntropyForWords, writeEntropyMapToFile) where
 
 -- Given the current state of the guess, and the solver will return the best next guess.
 
@@ -29,7 +29,7 @@ normalizeFrequencies :: FrequencyMap -> Int -> FrequencyMapF
 normalizeFrequencies freqMap total = Map.map (\v -> (fromIntegral v) / (fromIntegral total)) freqMap
 
 generateFreqencyMap :: WordList -> FrequencyMapF
-generateFreqencyMap wordList = let fm = calculateLetterFrequencies wordList 
+generateFreqencyMap wordList = let fm = calculateLetterFrequencies wordList
     in normalizeFrequencies fm (calculateTotalUniqueLetters fm)
 
 -------------------------------------------------------------------------------
@@ -103,14 +103,30 @@ feedbackWord guess answer = zipWith go guess answer
       | g `elem` answer = 'm'
       | otherwise       = 'n'
 
+-- Assuming feedbackPattern is a function that gives a feedback pattern for a pair of words
+feedbackCounts :: String -> WordList -> Map String Int
+feedbackCounts word words = foldl' updateCount Map.empty words
+  where
+    updateCount counts w =
+      let pattern = feedbackWord word w
+      in Map.insertWith (+) pattern 1 counts
+
+-- TOO SLOW
+-- feedbackProbabilities :: String -> WordList -> [Double]
+-- feedbackProbabilities word words = 
+--     let feedbacks = map (feedbackWord word) words
+--         uniqueFeedbacks = nub feedbacks
+--         feedbackCounts = map (\uf -> length (filter (== uf) feedbacks)) uniqueFeedbacks
+--         totalCount = sum feedbackCounts
+--     in map (\count -> fromIntegral count / fromIntegral totalCount) feedbackCounts
 -- Count feedback patterns and calculate probabilities
 feedbackProbabilities :: String -> WordList -> [Double]
-feedbackProbabilities word words = 
-    let feedbacks = map (feedbackWord word) words
-        uniqueFeedbacks = nub feedbacks
-        feedbackCounts = map (\uf -> length (filter (== uf) feedbacks)) uniqueFeedbacks
-        totalCount = sum feedbackCounts
-    in map (\count -> fromIntegral count / fromIntegral totalCount) feedbackCounts
+feedbackProbabilities word words =
+    let fbc = feedbackCounts word words
+        fbs = Map.elems fbc
+        totalCount = sum fbs
+    in map (\count -> fromIntegral count / fromIntegral totalCount) fbs
+
 
 -- Calculate entropy for a word
 calculateEntropy :: [Double] -> Double
@@ -118,7 +134,18 @@ calculateEntropy probabilities = -sum (map (\p -> p * logBase 2 p) probabilities
 
 -- Calculate entropy for each word in the list
 calculateEntropyForWords :: WordList -> [WordScorePair]
-calculateEntropyForWords words = map (\word -> (word, calculateEntropy (feedbackProbabilities word words))) words
+calculateEntropyForWords words = sortBy (flip compare `on` snd) entropyMap
+  where
+    entropyMap = map (\word -> (word, calculateEntropy (feedbackProbabilities word words))) words
+
+-- Write Entropy list to file
+writeEntropyMapToFile :: FilePath -> [WordScorePair] -> IO ()
+writeEntropyMapToFile filename entropyList = do
+    let formattedString = unlines [key ++ " " ++ show value | (key, value) <- entropyList]
+    writeFile filename formattedString
+
+takeFirstK :: Int -> [a] -> [a]
+takeFirstK k xs = take k xs
 
 -------------------------------------------------------------------------------
 -- | Generate a list of best next guesses based on current configuration
@@ -127,13 +154,12 @@ calculateEntropyForWords words = map (\word -> (word, calculateEntropy (feedback
 -- | Impossible characters are represented as a list of characters, they cannot be presented in the word
 -- | Usage: call this function on each round based on the feedback pattern this round. Notice that correctPattern may need to be accumulated across all rounds
 -------------------------------------------------------------------------------
-generateNextGuessList :: WordList -> String -> Map Char [Int] -> [Char] -> WordList
-generateNextGuessList words correctPattern misplaced disallowed = sortWords allFiltered correctPattern
+generateNextGuessList :: WordList -> String -> Map Char [Int] -> [Char] -> [WordScorePair]
+generateNextGuessList words correctPattern misplaced disallowed = calculateEntropyForWords allFiltered
     where
        impossibleFiltered = filterWordsImpossible words disallowed
        incorrectFiltered = filterWordsExistButIncorrectPlace impossibleFiltered misplaced
        allFiltered = filterWordsCorrectPlace incorrectFiltered correctPattern
-
 
 
 {-
@@ -179,8 +205,8 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 "myny"
 
 >>> feedbackProbabilities "test" ["test", "next", "dext", "nice"]
-[0.25,0.5,0.25]
+[0.5,0.25,0.25]
 
 >>> calculateEntropyForWords ["test", "next", "dext", "nice"]
-[("test",1.5),("next",2.0),("dext",2.0),("nice",1.5)]
+[("next",2.0),("dext",2.0),("test",1.5),("nice",1.5)]
 -}

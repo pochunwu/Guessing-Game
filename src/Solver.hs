@@ -1,4 +1,4 @@
-module Solver (calculateEntropyForWords, writeEntropyMapToFile) where
+module Solver (calculateEntropyForWords, writeEntropyMapToFile, generateNextGuessList) where
 
 -- Given the current state of the guess, and the solver will return the best next guess.
 
@@ -69,7 +69,7 @@ filterWordsCorrectPlace words pattern =
   where
     matchesPattern word patt =
       length word == length patt && all match (zip word patt)
-    match (w, p) = p == '_' || w == p
+    match (w, p) = p == '_' || p == '*' || w == p
 
 -------------------------------------------------------------------------------
 -- | Rank possible guesses according to correctly placed letters
@@ -147,6 +147,22 @@ writeEntropyMapToFile filename entropyList = do
 takeFirstK :: Int -> [a] -> [a]
 takeFirstK k xs = take k xs
 
+
+check :: String -> String -> (String, Map Char [Int], [Char])
+check guess answer = (mask, misplacedMap, invalids)
+  where
+    zipped = zip guess answer
+    mask = map (\(g, a) -> go g a) zipped
+
+    misplacedMap = Map.fromListWith (++) [ (g, [i]) | (g, i) <- zip guess [0..], go g (answer !! i) == '_' ]
+    invalids = [ g | (g, a) <- zipped, go g a == '*' ]
+
+    go :: Char -> Char -> Char
+    go g a
+      | g == a          = a
+      | g `elem` answer = '_'
+      | otherwise       = '*'
+
 -------------------------------------------------------------------------------
 -- | Generate a list of best next guesses based on current configuration
 -- | Correct pattern is represented as [letter]__[letter]_ where _ means incorrect guess
@@ -195,7 +211,7 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 ["level","sever","hello"]
 
 >>> generateNextGuessList ["level", "sever", "hello", "desco", "fever", "tesla"] "_e___" (Map.fromList [('l', [0, 4])]) ['v']
-["hello","tesla"]
+[("hello",1.0),("tesla",1.0)]
 
 
 >>> feedbackWord "test" "next"
@@ -209,4 +225,7 @@ fromList [('e',0.2727272727272727),('h',9.090909090909091e-2),('l',0.18181818181
 
 >>> calculateEntropyForWords ["test", "next", "dext", "nice"]
 [("next",2.0),("dext",2.0),("test",1.5),("nice",1.5)]
+
+>>> let (correctPattern, misplaced, disallowed) = (check "level" "hello") in (generateNextGuessList ["level", "sever", "hello", "desco", "fever", "tesla"] correctPattern misplaced disallowed)
+[("hello",1.0),("tesla",1.0)]
 -}

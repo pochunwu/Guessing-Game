@@ -1,4 +1,9 @@
 .stack-work/
+<<<<<<< HEAD
 .vscode/
 dist-newstyle/
 **/.DS_Store
+=======
+**/.DS_Store
+dist-newstyle
+>>>>>>> 655348b (chore: update gitignore)

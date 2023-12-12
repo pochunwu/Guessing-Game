@@ -33,6 +33,8 @@ import Brick.Widgets.Core
   , txt
   , str
   , padLeftRight
+  , padLeft
+  , padRight
   )
 import Brick.Widgets.Border (border)
 import Brick.Widgets.Border.Style (unicode, unicodeBold)
@@ -47,6 +49,7 @@ data State = State
     _sWordSize :: Int,
     _sInput :: String,
     _sStatus :: String,
+    _sAttemps :: [String],
     _sGameStatus :: Guess.State
   }
   deriving (Show, Eq)
@@ -80,6 +83,7 @@ initState = do
         _sWordSize = length word,
         _sInput = "",
         _sStatus = "",
+        _sAttemps = ["abcde"],
         _sGameStatus = Guess.Fresh
     }
 
@@ -98,46 +102,82 @@ data AppEvent = Dummy deriving Show
 
 draw :: Main.State -> [T.Widget ()]
 draw s =
-    [center . vLimit height . hBox $ 
+    [center . vBox $ 
       [drawGame s, drawInput s]
     ]
   where
     height = 5 * (s^.sWordSize) + 2
 
 drawGame :: Main.State -> T.Widget ()
-drawGame s = do
-  str $ s^.sStatus
+drawGame s =
+  withBorderStyle unicode $ border (vBox [ 
+      str "Game: ",
+      vBox (drawAttempts $ s^.sAttemps)
+  ])
+  where
+    drawAttempts :: [String] -> [T.Widget ()]
+    drawAttempts l =
+      map (drawGuessList s) l'
+      where
+        l' = l ++ replicate (s^.sWordSize + 1 - length l) ""
 
+drawCharWithBorder :: Char -> T.Widget ()
+drawCharWithBorder c = do
+  withBorderStyle unicode $
+    border $
+      padLeftRight 1 $
+        str [c]
+
+drawGuessList :: Main.State -> [Char] -> T.Widget ()
+drawGuessList s l = do
+  hBox $ map drawCharWithBorder l'
+  where 
+    currentLen = length l
+    l' = l ++ replicate (s^.sWordSize - currentLen) ' '
+        
 drawInput :: Main.State -> T.Widget ()
 drawInput s =
   withBorderStyle unicode $
     border $
       vBox [ 
-          str "Guess: ",
           hBox [
-              drawGuessList $ s^.sInput
+            str "Guess"
+          ],
+          hBox [
+              drawGuessList s $ s^.sInput
           ]
       ]
-  where 
-    drawCharWithBorder :: Char -> T.Widget ()
-    drawCharWithBorder c = 
-      withBorderStyle unicode $
-        border $
-          padLeftRight 1 $
-            str [c]
-    drawGuessList :: [Char] -> T.Widget ()
-    drawGuessList l = do
-      hBox $ map drawCharWithBorder l'
-      where 
-        currentLen = length l
-        l' = l ++ replicate (s^.sWordSize - currentLen) ' '
 
 handleEvent :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
 handleEvent e =
   case e of
     T.VtyEvent (V.EvKey V.KEsc []) -> M.halt
     T.VtyEvent (V.EvKey (V.KChar c) []) -> do
-        sInput %= (++ [c])
+      wordsize <- use sWordSize
+      input <- use sInput
+      if length input < wordsize
+        then do
+          sInput %= (++ [c])
+        else do
+          -- we have collect all the input, now we can check
+          return ()
+    T.VtyEvent (V.EvKey V.KEnter []) -> do
+      input <- use sInput
+      maxWordSize <- use sWordSize
+      if length input == maxWordSize then do
+        sAttemps %= (++ [input])
+        sInput .= ""
+        M.invalidateCache
+      else do
+        return ()
+      -- let (wordle, result) = check input word
+      -- sAttemps %= (++ [input])
+      -- sInput .= ""
+      -- if result
+      --   then do
+      --     sGameStatus .= Guess.Correct
+      --   else do
+      --     sGameStatus .= Guess.Incorrect
     
 handleEvent _ = return ()
 

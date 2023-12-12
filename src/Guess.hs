@@ -1,9 +1,10 @@
-module Guess (play) where
+module Guess (play, State (..)) where
 
 import Data.Char ( toLower )
 
 data State =
-      Correct
+      Fresh
+    | Correct
     | Misplaced
     | Incorrect
     deriving (Eq, Show)

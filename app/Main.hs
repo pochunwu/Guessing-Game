@@ -7,6 +7,7 @@ import qualified Brick.AttrMap as A
 import qualified Brick.Main as M
 import qualified Brick.Types as T
 import qualified Graphics.Vty as V
+import qualified Brick.Widgets.Core as C
 import Graphics.Vty.Attributes.Color
 import Brick.Util
 import Lens.Micro ((^.))
@@ -37,10 +38,13 @@ import Brick.Widgets.Core
   , padLeftRight
   , padLeft
   , padRight
+  , padTop
   )
 import Brick.Widgets.Border (border)
 import Brick.Widgets.Border.Style (unicode, unicodeBold)
-import Brick.Widgets.Center (center, hCenter)
+import Brick.Widgets.Center (center, hCenter, vCenter)
+
+import qualified Data.Map as Map
 
 import Guess
 import Choose
@@ -59,6 +63,7 @@ data State = State
     _sStatus :: String,
     _sAttemps :: [String],
     _sAttempsStatus :: [[Guess.State]],
+    _sKeyboardState :: [(Char, Guess.State)], -- Map.Map Char Guess.State,
     _sGameStatus :: GameStatus
   }
   deriving (Show, Eq)
@@ -93,7 +98,35 @@ initState = do
         _sStatus = "",
         _sAttemps = [],
         _sAttempsStatus = [],
-        _sGameStatus = Main.Fresh
+        _sGameStatus = Main.Fresh,
+        _sKeyboardState = [
+          ('a', Guess.Incorrect),
+          ('b', Guess.Incorrect),
+          ('c', Guess.Incorrect),
+          ('d', Guess.Incorrect),
+          ('e', Guess.Incorrect),
+          ('f', Guess.Incorrect),
+          ('g', Guess.Incorrect),
+          ('h', Guess.Incorrect),
+          ('i', Guess.Incorrect),
+          ('j', Guess.Incorrect),
+          ('k', Guess.Incorrect),
+          ('l', Guess.Incorrect),
+          ('m', Guess.Incorrect),
+          ('n', Guess.Incorrect),
+          ('o', Guess.Incorrect),
+          ('p', Guess.Incorrect),
+          ('q', Guess.Incorrect),
+          ('r', Guess.Incorrect),
+          ('s', Guess.Incorrect),
+          ('t', Guess.Incorrect),
+          ('u', Guess.Incorrect),
+          ('v', Guess.Incorrect),
+          ('w', Guess.Incorrect),
+          ('x', Guess.Incorrect),
+          ('y', Guess.Incorrect),
+          ('z', Guess.Incorrect)
+        ] -- Map.fromList $ zip ['a'..'z'] (repeat Guess.Incorrect)
     }
 
 
@@ -125,9 +158,19 @@ draw s =
       ]
     ]
 
+drawUsage :: Main.State -> T.Widget ()
+drawUsage s =
+  (vBox [ 
+      str "Usage: ",
+      str "Press ESC to quit",
+      str "Press ENTER to submit",
+      str "Press DEL to delete",
+      str "Press any other key to input"
+  ])
+
 drawStatus :: Main.State -> T.Widget ()
 drawStatus s =
-  withBorderStyle unicode $ border (vBox [ 
+  withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
       str ("Status: " ++ s^.sWord),
       if s^.sGameStatus == Main.Fresh
         -- green text
@@ -137,8 +180,32 @@ drawStatus s =
       else if s^.sGameStatus == Main.Incorrect
         then withAttr (A.attrName "warning") $ str "Incorrect"
       else
-        str "Unknown"
+        str "Unknown",
+      padTop (C.Pad 1) $ drawKeyboard s,
+      padTop (C.Pad 1) $ drawUsage s
   ])
+
+rawKeyboard :: [String]
+rawKeyboard = ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
+drawKeyboard :: Main.State -> T.Widget ()
+drawKeyboard s = do
+  -- vBox $ map drawCharList rawKeyboard
+  -- vertically align the keyboard
+  hLimit 30 $ vBox $ map hCenter (map drawCharList rawKeyboard)
+  where
+    drawCharList l = do
+      padRight (C.Pad 1) $ hBox $ map drawChar l
+    drawChar c = do
+      let state = lookup c (s^.sKeyboardState)
+      case state of
+        Just Guess.Correct -> 
+          withAttr (A.attrName "correct") (padLeft (C.Pad 1) $ str [c])
+        Just Guess.Misplaced -> 
+          withAttr (A.attrName "misplaced_char") (padLeft (C.Pad 1) $ str [c])
+        Just Guess.Incorrect -> 
+          padLeft (C.Pad 1) $ str [c]
+        _ -> 
+          padLeft (C.Pad 1) $ str [c]
 
 drawGame :: Main.State -> T.Widget ()
 drawGame s =
@@ -170,6 +237,8 @@ drawGame s =
                       withAttr (A.attrName "misplaced_char") (drawCharWithBorder c)
                     Guess.Incorrect -> 
                       drawCharWithBorder c
+                    _ -> 
+                      drawCharWithBorder c
 
 drawCharWithBorder :: Char -> T.Widget ()
 drawCharWithBorder c = do
@@ -198,6 +267,10 @@ drawInput s =
           ]
       ]
 
+unwrapState :: Maybe Guess.State -> Guess.State
+unwrapState (Just a) = a
+unwrapState Nothing = Guess.Incorrect
+
 handleEvent :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
 handleEvent e =
   case e of
@@ -221,22 +294,26 @@ handleEvent e =
         sInput .= ""
         let (wordle, result) = check input word
         sAttempsStatus %= (++ [wordle])
+        keyboardState <- use sKeyboardState
         if result
           then do
             sGameStatus .= Main.Correct
           else do
             sGameStatus .= Main.Incorrect
+        let currentState = zip input wordle
+        -- update keyboard state, if the char is already correct, then don't update
+        sKeyboardState %= map (\(c, s) -> if s == Guess.Correct then (c, s) else (c, unwrapState $ lookup c currentState))
         M.invalidateCache
       else do
         return ()
-      -- let (wordle, result) = check input word
-      -- sAttemps %= (++ [input])
-      -- sInput .= ""
-      -- if result
-      --   then do
-      --     sGameStatus .= Guess.Correct
-      --   else do
-      --     sGameStatus .= Guess.Incorrect
+    T.VtyEvent (V.EvKey V.KDel []) -> do
+      -- remove the last char
+      input <- use sInput
+      if length input > 0
+        then do
+          sInput .= take (length input - 1) input
+        else do
+          return ()
     
 handleEvent _ = return ()
 

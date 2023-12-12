@@ -24,6 +24,8 @@ dependencies:
 - containers >= 0.6
 - random >= 1.2.1.1
 - brick >= 2.1.1
+- containers >= 0.6.8
+- vty >= 6.1
 
 ghc-options:
 - -Wall

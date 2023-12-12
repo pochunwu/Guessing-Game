@@ -1,4 +1,4 @@
-module Solver (calculateEntropyForWords, writeEntropyMapToFile, generateNextGuessList) where
+module Solver (calculateEntropyForWords, writeEntropyMapToFile, generateNextGuessList, readFileAsWordScores) where
 
 -- Given the current state of the guess, and the solver will return the best next guess.
 
@@ -8,7 +8,8 @@ import Data.List (foldl', maximumBy, sortBy, nub)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Ord (comparing)
-import Prelude hiding (words)
+import Text.Read (readMaybe)
+import qualified Data.String
 
 type WordList = [String]
 type FrequencyMap = Map Char Int
@@ -177,6 +178,22 @@ generateNextGuessList words correctPattern misplaced disallowed = calculateEntro
        incorrectFiltered = filterWordsExistButIncorrectPlace impossibleFiltered misplaced
        allFiltered = filterWordsCorrectPlace incorrectFiltered correctPattern
 
+
+-- Function to parse a line into a Maybe (String, Double)
+parseLine :: String -> Maybe WordScorePair
+parseLine line = case Data.String.words line of
+    [str, numStr] -> case readMaybe numStr of
+        Just num -> Just (str, num)
+        Nothing  -> Nothing
+    _ -> Nothing
+
+-- Function to read the file and convert it to a list of (String, Double)
+readFileAsWordScores :: FilePath -> IO [WordScorePair]
+readFileAsWordScores filePath = do
+    contents <- readFile filePath
+    let linesOfFiles = lines contents
+    let maybeTuples = map parseLine linesOfFiles
+    return $ map (\(Just x) -> x) (filter (/= Nothing) maybeTuples)
 
 {-
 --

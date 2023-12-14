@@ -64,7 +64,9 @@ data State = State
     _sAttemps :: [String],
     _sAttempsStatus :: [[Guess.State]],
     _sKeyboardState :: [(Char, Guess.State)], -- Map.Map Char Guess.State,
-    _sGameStatus :: GameStatus
+    _sGameStatus :: GameStatus,
+    _sScreen :: Int
+    _sSelectedMode :: Int
   }
   deriving (Show, Eq)
 makeLenses ''Main.State
@@ -126,7 +128,9 @@ initState = do
           ('x', Guess.Incorrect),
           ('y', Guess.Incorrect),
           ('z', Guess.Incorrect)
-        ] -- Map.fromList $ zip ['a'..'z'] (repeat Guess.Incorrect)
+        ], -- Map.fromList $ zip ['a'..'z'] (repeat Guess.Incorrect)
+        _sScreen = 0, -- 0 - mode selection, 1 - game
+        _sSelectedMode = 0
     }
 
 
@@ -146,17 +150,39 @@ guessAppAttrMap = [
     (A.attrName "warning", fg yellow),
     (A.attrName "ongoing", fg green),
     (A.attrName "correct", fg green),
-    (A.attrName "misplaced_char", fg yellow)]
+    (A.attrName "misplaced_char", fg yellow),
+    (A.attrName "selected", fg green)]
 
 data AppEvent = Dummy deriving Show
 
 draw :: Main.State -> [T.Widget ()]
 draw s =
-    [center . hBox $ [
-        vBox $ [drawGame s, drawInput s],
-        vBox $ [drawStatus s]
+  if s^.sScreen == 0
+    then
+      [drawModeSelection s]
+    else
+      [center . hBox $ [
+          vBox $ [drawGame s, drawInput s],
+          vBox $ [drawStatus s]
+        ]
       ]
-    ]
+
+drawModeSelection :: Main.State -> T.Widget ()
+drawModeSelection s =
+  withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
+      str "Choose Mode: ",
+      addAttr 0 $ str "1 - Words (5-letter)",
+      addAttr 1 $ str "2 - Animals",
+      addAttr 2 $ str "3 - US cities",
+      addAttr 3 $ str "4 - Names"
+  ])
+  where
+    addAttr mode = 
+      if mode == s^.sSelectedMode
+        then
+          withAttr (A.attrName "selected")
+        else
+          id
 
 drawUsage :: Main.State -> T.Widget ()
 drawUsage s =
@@ -314,6 +340,23 @@ handleEvent e =
           sInput .= take (length input - 1) input
         else do
           return ()
+    -- up and down arrow key
+    T.VtyEvent (V.EvKey V.KUp []) -> do
+      currentMode <- use sSelectedMode
+      if currentMode > 0
+        then do
+          sSelectedMode -= 1
+        else do
+          return ()
+    T.VtyEvent (V.EvKey V.KDown []) -> do
+      currentMode <- use sSelectedMode
+      if currentMode < 3
+        then do
+          sSelectedMode += 1
+        else do
+          return ()
+    _ -> return ()
+
     
 handleEvent _ = return ()
 

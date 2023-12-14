@@ -1,4 +1,4 @@
-module Guess (play, State (..)) where
+module Guess (play, check, State (..)) where
 
 import Data.Char ( toLower )
 

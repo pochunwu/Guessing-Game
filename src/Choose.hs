@@ -1,4 +1,4 @@
-module Choose (genRandomWord) where
+module Choose (genRandomWord, genRandomWordString) where
 
 import System.Random ( randomRIO )
 
@@ -17,6 +17,10 @@ genRandomWord  n
         strings <- readFileToList "data/names.txt"
         getRandomElement strings
     | otherwise = error "Invalid Input"
+
+genRandomWordString :: Int -> String
+genRandomWordString n = do
+    genRandomWordString n
 
 readFileToList :: String -> IO [String]
 readFileToList fileName = lines <$> readFile fileName

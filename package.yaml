@@ -23,6 +23,10 @@ dependencies:
 - base >= 4.7 && < 5
 - containers >= 0.6
 - random >= 1.2.1.1
+- brick >= 2.1.1
+- containers >= 0.6.8
+- vty >= 6.1
+- deepseq >= 1.5.0.0
 
 ghc-options:
 - -Wall

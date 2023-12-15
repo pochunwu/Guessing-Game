@@ -69,7 +69,8 @@ data State = State
     _sGameStatus :: GameStatus,
     _sScreen :: Int,
     _sSelectedMode :: Int,
-    _sSelectedDifficulty :: Int
+    _sSelectedDifficulty :: Int,
+    _sCorrectWord :: [(Char, Int)]
   }
   deriving (Show, Eq)
 makeLenses ''Main.State
@@ -117,7 +118,8 @@ initState scr mode difficulty = do
         ], -- Map.fromList $ zip ['a'..'z'] (repeat Guess.Incorrect)
         _sScreen = scr, -- 0 - mode selection, 1 - game
         _sSelectedMode = 0,
-        _sSelectedDifficulty = difficulty
+        _sSelectedDifficulty = difficulty,
+        _sCorrectWord = []
     }
 
 
@@ -340,9 +342,19 @@ handleEnter _ = do
       let currentState = zip input wordle
       -- update keyboard state, if the char is already correct, then don't update
       sKeyboardState %= map (\(c, s) -> if s == Guess.Correct then (c, s) else (c, unwrapState $ lookup c currentState))
+      -- update correct word
+      correctWord <- use sCorrectWord
+      let correctWord' = genCorrectWordListWithIndex currentState
+      sCorrectWord .= correctWord ++ correctWord'
       M.invalidateCache
     else do
       return ()
+    where
+      genCorrectWordListWithIndex :: [(Char, Guess.State)] -> [(Char, Int)]
+      genCorrectWordListWithIndex l = 
+        map (\(c, s) -> (c, index)) $ filter (\(c, s) -> s == Guess.Correct) l
+        where
+          index = length $ filter (\(c, s) -> s == Guess.Correct) l
 
 handleEvent :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
 handleEvent e =

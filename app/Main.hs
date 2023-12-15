@@ -159,7 +159,21 @@ draw s =
         0 -> [drawModeSelection s]
         1 -> [drawDifficultySelection s]
         2 -> [drawGameView s]
+        3 -> [drawGameResult s]
         _ -> [drawGameView s]
+
+drawGameResult :: Main.State -> T.Widget ()
+drawGameResult s = 
+  center . withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [
+    case s ^. sGameStatus of
+      Main.Correct -> 
+        withAttr (A.attrName "correct") $ str "Congratulations! "
+      Main.Lose -> 
+        withAttr (A.attrName "incorrect") $ str "Better luck next time! "
+      _ -> 
+        str "Unknown",
+      str "Press ESC to quit "
+  ])
 
 drawGameView :: Main.State -> T.Widget ()
 drawGameView s = 
@@ -215,7 +229,7 @@ drawUsage s =
 drawStatus :: Main.State -> T.Widget ()
 drawStatus s =
   withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
-      str ("Status: " ++ s^.sWord),
+      str "Status: ",
       if s^.sGameStatus == Main.Fresh
         -- green text
         then withAttr (A.attrName "ongoing") $ str "On going"
@@ -349,9 +363,11 @@ handleEnter _ = do
       if result
         then do
           sGameStatus .= Main.Correct
+          sScreen .= 3
         else do
-          if length attemps == difficulty * 2 + 1 then
+          if length attemps == difficulty * 2 + 1 then do
             sGameStatus .= Main.Lose
+            sScreen .= 3
           else
             sGameStatus .= Main.Incorrect
       let currentState = zip input wordle
@@ -486,5 +502,4 @@ main = do
   s0 <- appModeSelection
   s1 <- appDifficultySelection
   s2 <- appMain 2 (s0^.sSelectedMode + 1) (s1^.sSelectedDifficulty + 1)
-
   return ()

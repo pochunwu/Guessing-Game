@@ -15,21 +15,34 @@ We will create a Multi-Domain Guessing Game with Solver, expanding on the popula
 ## Key Components (12/1 Update)
 ```
 .
-
 ├── app
 │   └── Main.hs
 ├── data
+│   ├── animals.txt
+│   ├── citiesUS.txt
+│   ├── names.txt
+│   └── wordle5.txt
+├── package.yaml
 ├── src
+│   ├── Choose.hs
 │   ├── Guess.hs
-│   ├── Lib.hs
-│   ├── Solver.hs
-│   └── UI.hs
+│   └── Solver.hs
+├── stack.yaml
 └── test
-    ├── Common.hs
-    ├── Spec.hs
     └── Test.hs
 ```
-## How to start the game?
+## Let's Guess!
 ```
 stack run
 ```
+or
+```
+cabal run
+```
+1. Choose Mode:
+![mode](https://github.com/pochunwu/GuessingGame/assets/118617531/f02e95f2-5387-4e33-a869-421d3adde733)
+2. Choose Difficulty:
+3. Game:
+    - Make a guess:
+    - Get a hint:
+4. Result:

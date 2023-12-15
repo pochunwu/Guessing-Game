@@ -44,7 +44,6 @@ import Brick.Widgets.Border (border)
 import Brick.Widgets.Border.Style (unicode, unicodeBold)
 import Brick.Widgets.Center (center, hCenter, vCenter)
 
-import Data.Map (Map)
 import qualified Data.Map as Map
 
 import Guess
@@ -189,7 +188,7 @@ drawDifficultySelection s =
           id
 
 drawUsage :: Main.State -> T.Widget ()
-drawUsage s =
+drawUsage _ =
   (vBox [ 
       str "Usage: ",
       str "Press ESC to quit",
@@ -202,7 +201,7 @@ drawUsage s =
 drawStatus :: Main.State -> T.Widget ()
 drawStatus s =
   withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
-      str $ "Status: " ++ show (s^.sWord),
+      str "Status: ",
       if s^.sGameStatus == Main.Fresh
         -- green text
         then withAttr (A.attrName "ongoing") $ str "On going"
@@ -230,7 +229,6 @@ drawKeyboard s = do
       padRight (C.Pad 1) $ hBox $ map drawChar l
     drawChar c = do
       let state = lookup c (s^.sKeyboardState)
-      let a = trace $ show (s^.sKeyboardState)
       case state of
         Just Guess.Correct -> 
           withAttr (A.attrName "correct") (padLeft (C.Pad 1) $ str [c])
@@ -239,6 +237,8 @@ drawKeyboard s = do
         Just Guess.Incorrect -> 
           withAttr (A.attrName "incorrect") $ padLeft (C.Pad 1) $ str [c]
         Just Guess.Normal -> 
+          id padLeft (C.Pad 1) $ str [c]
+        _ -> 
           id padLeft (C.Pad 1) $ str [c]
 
 drawGame :: Main.State -> T.Widget ()
@@ -263,8 +263,8 @@ drawGame s =
               hBox (map drawCharWithState $ zip attempStr wordleStates)
               where
                 drawCharWithState :: (Char, Guess.State) -> T.Widget ()
-                drawCharWithState (c, s) =
-                  case s of
+                drawCharWithState (c, st) =
+                  case st of
                     Guess.Correct   -> 
                       withAttr (A.attrName "correct") (drawCharWithBorder c)
                     Guess.Misplaced -> 
@@ -329,17 +329,16 @@ handleEnter _ = do
     word <- use sWord
     if length input == length word && length attemps < difficulty * 2 + 1 then do
       sAttemps %= (++ [input])
-      attemps <- use sAttemps
+      newAttemps <- use sAttemps
       sInput .= ""
       let (wordle, result) = check input word
       sAttempsStatus %= (++ [wordle])
-      keyboardState <- use sKeyboardState
       if result
         then do
           sGameStatus .= Main.Correct
           sScreen .= 3
         else do
-          if length attemps == difficulty * 2 + 1 then do
+          if length newAttemps == difficulty * 2 + 1 then do
             sGameStatus .= Main.Lose
             sScreen .= 3
           else
@@ -351,8 +350,6 @@ handleEnter _ = do
         \(c, s) -> if s == Guess.Correct || lookup c currentState == Nothing 
           then (c, s) 
           else (c, unwrapState $ lookup c sortedCurrentState))
-      state <- use sKeyboardState
-      let a = trace $ show state
       -- update correct word
       let correctWord' = genCorrectWordPattern currentState
       sCorrectWord .= correctWord'
@@ -464,9 +461,6 @@ handleEvent e =
       else do
         return ()
     _ -> return ()
-
-    
-handleEvent _ = return ()
 
 appModeSelection :: IO Main.State
 appModeSelection = do

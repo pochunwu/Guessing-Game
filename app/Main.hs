@@ -202,7 +202,7 @@ drawUsage s =
 drawStatus :: Main.State -> T.Widget ()
 drawStatus s =
   withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
-      str "Status: ",
+      str $ "Status: " ++ show (s^.sWord),
       if s^.sGameStatus == Main.Fresh
         -- green text
         then withAttr (A.attrName "ongoing") $ str "On going"
@@ -345,11 +345,12 @@ handleEnter _ = do
           else
             sGameStatus .= Main.Incorrect
       let currentState = zip input wordle
+      let sortedCurrentState = sortCurrentState currentState
       -- update keyboard state, if the char is already correct, then don't update
       sKeyboardState %= map (
         \(c, s) -> if s == Guess.Correct || lookup c currentState == Nothing 
           then (c, s) 
-          else (c, unwrapState $ lookup c currentState))
+          else (c, unwrapState $ lookup c sortedCurrentState))
       state <- use sKeyboardState
       let a = trace $ show state
       -- update correct word
@@ -361,6 +362,14 @@ handleEnter _ = do
     else do
       return ()
     where
+      sortCurrentState :: [(Char, Guess.State)] -> [(Char, Guess.State)]
+      sortCurrentState [] = []
+      sortCurrentState ((c, s):xs) = 
+        if s == Guess.Correct
+          then
+            (c, s) : sortCurrentState xs
+          else
+            sortCurrentState xs ++ [(c, s)]
       genCorrectWordPattern :: [(Char, Guess.State)] -> String
       genCorrectWordPattern tuples = [if state == Guess.Correct then c else '_' | (c, state) <- tuples]
       updateMisplacedChar :: [(Char, Guess.State)] -> Map.Map Char [Int] -> Int -> Map.Map Char [Int]

@@ -15,6 +15,7 @@ import Lens.Micro.TH (makeLenses)
 import Lens.Micro.Mtl
 import Control.Monad (void, forever, liftM2)
 import Control.Concurrent (threadDelay, forkIO)
+import Control.DeepSeq (deepseq)
 import Brick.AttrMap
   ( attrMap
   )
@@ -53,6 +54,7 @@ data GameStatus =
       Fresh
     | Correct
     | Incorrect
+    | Lose
     deriving (Eq, Show)
 
 data State = State
@@ -72,31 +74,14 @@ data State = State
   deriving (Show, Eq)
 makeLenses ''Main.State
 
-appMain :: IO Main.State
-appMain = do
-  M.defaultMain app =<< initState
-
-initState :: IO Main.State
-initState = do
-    -- putStrLn "Welcome to the Guessing Game 🎉"
-    -- putStrLn "Please choose what to guess: "
-    -- putStrLn "1 - Words (5-letter)"
-    -- putStrLn "2 - Animals"
-    -- putStrLn "3 - US cities"
-    -- putStrLn "4 - Names"
-    -- topics <- readLn :: IO Int
-    -- word <- genRandomWord topics
-    -- putStrLn "Choose Difficulty: "
-    -- putStrLn "3 - Hard"
-    -- putStrLn "5 - Medium"
-    -- putStrLn "7 - Easy"
-    -- difficulty <- readLn :: IO Int
-    -- putStrLn $ "Word Length: " ++ show (length word)
-    -- putStrLn $ "Difficulty: " ++ show difficulty
+initState :: Int -> Int -> Int -> IO Main.State
+initState scr mode difficulty = do
+    word <- genRandomWord mode
+    let wordsize = length word
     return $ Main.State {
         _sWords = [],
-        _sWord = "", -- word,
-        _sWordSize = 0, --length word,
+        _sWord = word, -- word,
+        _sWordSize = wordsize, --length word,
         _sInput = "",
         _sStatus = "",
         _sAttemps = [],
@@ -130,9 +115,9 @@ initState = do
           ('y', Guess.Incorrect),
           ('z', Guess.Incorrect)
         ], -- Map.fromList $ zip ['a'..'z'] (repeat Guess.Incorrect)
-        _sScreen = 0, -- 0 - mode selection, 1 - game
+        _sScreen = scr, -- 0 - mode selection, 1 - game
         _sSelectedMode = 0,
-        _sSelectedDifficulty = 0
+        _sSelectedDifficulty = difficulty
     }
 
 
@@ -153,6 +138,7 @@ guessAppAttrMap = [
     (A.attrName "ongoing", fg green),
     (A.attrName "correct", fg green),
     (A.attrName "misplaced_char", fg yellow),
+    (A.attrName "incorrect", fg red),
     (A.attrName "mode_selected", fg green),
     (A.attrName "difficulty_selected", fg yellow)]
 
@@ -160,16 +146,18 @@ data AppEvent = Dummy deriving Show
 
 draw :: Main.State -> [T.Widget ()]
 draw s =
-  if s^.sScreen == 0 then
-      [drawModeSelection s]
-  else if s^.sScreen == 1 then
-      [drawDifficultySelection s]
-  else
-    [center . hBox $ [
-        vBox $ [drawGame s, drawInput s],
-        vBox $ [drawStatus s]
-      ]
-    ]
+    case s ^. sScreen of
+        0 -> [drawModeSelection s]
+        1 -> [drawDifficultySelection s]
+        2 -> [drawGameView s]
+        _ -> [drawGameView s]
+
+drawGameView :: Main.State -> T.Widget ()
+drawGameView s = 
+  center . hBox $ [
+      vBox $ [drawGame s, drawInput s],
+      vBox $ [drawStatus s]
+  ]
 
 drawModeSelection :: Main.State -> T.Widget ()
 drawModeSelection s =
@@ -191,7 +179,7 @@ drawModeSelection s =
 drawDifficultySelection :: Main.State -> T.Widget ()
 drawDifficultySelection s =
   withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
-      str "Use Arrow Choose Difficulty: ",
+      str "Use Arrow to Choose Difficulty: ",
       addAttr 0 $ str "3 - Hard",
       addAttr 1 $ str "5 - Medium",
       addAttr 2 $ str "7 - Easy"
@@ -225,6 +213,8 @@ drawStatus s =
         then withAttr (A.attrName "correct") $ str "Correct"
       else if s^.sGameStatus == Main.Incorrect
         then withAttr (A.attrName "warning") $ str "Incorrect"
+      else if s^.sGameStatus == Main.Lose
+        then withAttr (A.attrName "incorrect") $ str "Lose"
       else
         str "Unknown",
       padTop (C.Pad 1) $ drawKeyboard s,
@@ -264,8 +254,8 @@ drawGame s =
     drawAttempts l wordleStatesList =
       map f $ zip l' w'
       where
-        l' = l ++ replicate (s^.sWordSize + 1 - length l) ""
-        w' = wordleStatesList ++ replicate (s^.sWordSize + 1 - length wordleStatesList) []
+        l' = l ++ replicate ((s^.sSelectedDifficulty * 2 + 1) - length l) ""
+        w' = wordleStatesList ++ replicate ((s^.sSelectedDifficulty * 2 + 1) - length wordleStatesList) []
         f :: (String, [Guess.State]) -> T.Widget ()
         f (attempStr, wordleStates) = do
           if length attempStr == 0
@@ -306,7 +296,7 @@ drawInput s =
     border $
       vBox [ 
           hBox [
-            str "Guess"
+            str "Guess "
           ],
           hBox [
               drawGuessList s $ s^.sInput
@@ -318,25 +308,23 @@ unwrapState (Just a) = a
 unwrapState Nothing = Guess.Incorrect
 
 handleEnter :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
-handleEnter e = do
+handleEnter _ = do
   screen <- use sScreen
   -- 0, select wordset
   -- 1, select difficulty
   -- 2, start game
   if screen == 0 then do
-    sScreen .= 1
-    topics <- use sSelectedMode
-    let word = genRandomWordString topics
-    sWord .= word
-    sWordSize .= length word
+    M.halt
   else if screen == 1 then do
-    sScreen .= 2
-  else if screen == 2 then do
+    M.halt
+  else do
     input <- use sInput
-    maxWordSize <- use sWordSize
+    attemps <- use sAttemps
+    difficulty <- use sSelectedDifficulty
     word <- use sWord
-    if length input == maxWordSize then do
+    if length input == length word && length attemps < difficulty * 2 + 1 then do
       sAttemps %= (++ [input])
+      attemps <- use sAttemps
       sInput .= ""
       let (wordle, result) = check input word
       sAttempsStatus %= (++ [wordle])
@@ -345,33 +333,41 @@ handleEnter e = do
         then do
           sGameStatus .= Main.Correct
         else do
-          sGameStatus .= Main.Incorrect
+          if length attemps == difficulty * 2 + 1 then
+            sGameStatus .= Main.Lose
+          else
+            sGameStatus .= Main.Incorrect
       let currentState = zip input wordle
       -- update keyboard state, if the char is already correct, then don't update
       sKeyboardState %= map (\(c, s) -> if s == Guess.Correct then (c, s) else (c, unwrapState $ lookup c currentState))
       M.invalidateCache
     else do
       return ()
-  else do
-    return ()
 
 handleEvent :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
 handleEvent e =
   case e of
     T.VtyEvent (V.EvKey V.KEsc []) -> M.halt
+    T.VtyEvent (V.EvKey (V.KFun 5) []) -> do
+      M.halt
     T.VtyEvent (V.EvKey (V.KChar c) []) -> do
-      sGameStatus .= Main.Fresh
-      wordsize <- use sWordSize
-      input <- use sInput
-      if length input < wordsize
+      currentStatus <- use sGameStatus
+      if currentStatus == Main.Lose || currentStatus == Main.Correct
         then do
-          sInput %= (++ [c])
-        else do
-          -- we have collect all the input, now we can check
           return ()
+        else do
+          sGameStatus .= Main.Fresh
+          wordsize <- use sWordSize
+          input <- use sInput
+          if length input < wordsize
+            then do
+              sInput %= (++ [c])
+            else do
+              -- we have collect all the input, now we can check
+              return ()
     T.VtyEvent (V.EvKey V.KEnter []) -> do
       handleEnter e
-    T.VtyEvent (V.EvKey V.KDel []) -> do
+    T.VtyEvent (V.EvKey V.KBS []) -> do
       -- remove the last char
       input <- use sInput
       if length input > 0
@@ -382,6 +378,7 @@ handleEvent e =
     -- up and down arrow key
     T.VtyEvent (V.EvKey V.KUp []) -> do
       currentMode <- use sSelectedMode
+      currentDifficulty <- use sSelectedDifficulty
       currentScreen <- use sScreen
       if currentScreen == 0 then do
         if currentMode > 0
@@ -390,7 +387,7 @@ handleEvent e =
           else do
             return ()
       else if currentScreen == 1 then do
-        if currentMode > 0
+        if currentDifficulty > 0
           then do
             sSelectedDifficulty -= 1
           else do
@@ -399,6 +396,7 @@ handleEvent e =
         return ()
     T.VtyEvent (V.EvKey V.KDown []) -> do
       currentMode <- use sSelectedMode
+      currentDifficulty <- use sSelectedDifficulty
       currentScreen <- use sScreen
       if currentScreen == 0 then do
         if currentMode < 3
@@ -407,7 +405,7 @@ handleEvent e =
           else do
             return ()
       else if currentScreen == 1 then do
-        if currentMode < 2
+        if currentDifficulty < 2
           then do
             sSelectedDifficulty += 1
           else do
@@ -419,7 +417,22 @@ handleEvent e =
     
 handleEvent _ = return ()
 
+appModeSelection :: IO Main.State
+appModeSelection = do
+  M.defaultMain app =<< initState 0 1 1 
+
+appDifficultySelection :: IO Main.State
+appDifficultySelection = do
+  M.defaultMain app =<< initState 1 1 1
+
+appMain :: Int -> Int -> Int -> IO Main.State
+appMain scr mode difficulty = do
+  M.defaultMain app =<< initState scr mode difficulty
+
 main :: IO ()
-main = do
-  s <- appMain
+main = do 
+  s0 <- appModeSelection
+  s1 <- appDifficultySelection
+  s2 <- appMain 2 (s0^.sSelectedMode + 1) (s1^.sSelectedDifficulty + 1)
+
   return ()

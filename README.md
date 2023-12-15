@@ -30,6 +30,7 @@ We will create a Multi-Domain Guessing Game with Solver, expanding on the popula
     └── Test.hs
 ```
 ## How to start the game?
+
 ```
 stack run
 ```
@@ -37,3 +38,5 @@ Or
 ```
 cabal run
 ```
+=======
+![mode](https://github.com/pochunwu/GuessingGame/assets/118617531/f02e95f2-5387-4e33-a869-421d3adde733)

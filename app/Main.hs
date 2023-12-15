@@ -124,7 +124,7 @@ initState scr mode difficulty = do
         _sScreen = scr, -- 0 - mode selection, 1 - game
         _sSelectedMode = 0,
         _sSelectedDifficulty = difficulty,
-        _sCorrectWord = [],
+        _sCorrectWord = replicate (length word) '_',
         _sMissplacedChar = Map.empty,
         _sIncorrectChar = []
     }
@@ -376,7 +376,7 @@ handleEnter _ = do
       -- update correct word
       let correctWord' = genCorrectWordPattern currentState
       sCorrectWord .= correctWord'
-      sMissplacedChar .= updateMisplacedChar currentState (Map.fromList [])
+      sMissplacedChar .= updateMisplacedChar currentState (Map.fromList []) 0
       sIncorrectChar .= updateIncorrectChar currentState []
       M.invalidateCache
     else do
@@ -384,17 +384,12 @@ handleEnter _ = do
     where
       genCorrectWordPattern :: [(Char, Guess.State)] -> String
       genCorrectWordPattern tuples = [if state == Guess.Correct then c else '_' | (c, state) <- tuples]
-      updateMisplacedChar :: [(Char, Guess.State)] -> Map Char [Int] -> Map Char [Int]
-      updateMisplacedChar [] m = m
-      updateMisplacedChar ((c, s):xs) m =
+      updateMisplacedChar :: [(Char, Guess.State)] -> Map.Map Char [Int] -> Int -> Map.Map Char [Int]
+      updateMisplacedChar [] m _ = m
+      updateMisplacedChar ((c, s):xs) m i =
         if s == Guess.Misplaced
-          then
-            updateMisplacedChar xs m'
-          else
-            updateMisplacedChar xs m
-        where
-          m' = Map.insertWith (++) c [i+1] m
-          i = length m'
+          then updateMisplacedChar xs (Map.insertWith (++) c [i] m) (i + 1)
+          else updateMisplacedChar xs m (i + 1)
       updateIncorrectChar :: [(Char, Guess.State)] -> [Char] -> [Char]
       updateIncorrectChar [] l = l
       updateIncorrectChar ((c, s):xs) l =

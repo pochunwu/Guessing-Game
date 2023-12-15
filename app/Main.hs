@@ -93,34 +93,7 @@ initState scr mode difficulty = do
         _sAttemps = [],
         _sAttempsStatus = [],
         _sGameStatus = Main.Fresh,
-        _sKeyboardState = [
-          ('a', Guess.Normal),
-          ('b', Guess.Normal),
-          ('c', Guess.Normal),
-          ('d', Guess.Normal),
-          ('e', Guess.Normal),
-          ('f', Guess.Normal),
-          ('g', Guess.Normal),
-          ('h', Guess.Normal),
-          ('i', Guess.Normal),
-          ('j', Guess.Normal),
-          ('k', Guess.Normal),
-          ('l', Guess.Normal),
-          ('m', Guess.Normal),
-          ('n', Guess.Normal),
-          ('o', Guess.Normal),
-          ('p', Guess.Normal),
-          ('q', Guess.Normal),
-          ('r', Guess.Normal),
-          ('s', Guess.Normal),
-          ('t', Guess.Normal),
-          ('u', Guess.Normal),
-          ('v', Guess.Normal),
-          ('w', Guess.Normal),
-          ('x', Guess.Normal),
-          ('y', Guess.Normal),
-          ('z', Guess.Normal)
-        ], -- Map.fromList $ zip ['a'..'z'] (repeat Guess.Incorrect)
+        _sKeyboardState = zip ['a'..'z'] (replicate 26 Guess.Normal),
         _sScreen = scr, -- 0 - mode selection, 1 - game
         _sSelectedMode = 0,
         _sSelectedDifficulty = difficulty,
@@ -373,7 +346,10 @@ handleEnter _ = do
             sGameStatus .= Main.Incorrect
       let currentState = zip input wordle
       -- update keyboard state, if the char is already correct, then don't update
-      sKeyboardState %= map (\(c, s) -> if s == Guess.Correct || lookup c currentState == Nothing then (c, s) else (c, unwrapState $ lookup c currentState))
+      sKeyboardState %= map (
+        \(c, s) -> if s == Guess.Correct || lookup c currentState == Nothing 
+          then (c, s) 
+          else (c, unwrapState $ lookup c currentState))
       state <- use sKeyboardState
       let a = trace $ show state
       -- update correct word

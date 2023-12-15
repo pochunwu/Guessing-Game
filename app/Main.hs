@@ -257,6 +257,7 @@ drawKeyboard s = do
       padRight (C.Pad 1) $ hBox $ map drawChar l
     drawChar c = do
       let state = lookup c (s^.sKeyboardState)
+      let a = trace $ show (s^.sKeyboardState)
       case state of
         Just Guess.Correct -> 
           withAttr (A.attrName "correct") (padLeft (C.Pad 1) $ str [c])
@@ -372,7 +373,9 @@ handleEnter _ = do
             sGameStatus .= Main.Incorrect
       let currentState = zip input wordle
       -- update keyboard state, if the char is already correct, then don't update
-      sKeyboardState %= map (\(c, s) -> if s == Guess.Correct then (c, s) else (c, unwrapState $ lookup c currentState))
+      sKeyboardState %= map (\(c, s) -> if s == Guess.Correct || lookup c currentState == Nothing then (c, s) else (c, unwrapState $ lookup c currentState))
+      state <- use sKeyboardState
+      let a = trace $ show state
       -- update correct word
       let correctWord' = genCorrectWordPattern currentState
       sCorrectWord .= correctWord'

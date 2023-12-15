@@ -26,7 +26,6 @@ dependencies:
 - brick >= 2.1.1
 - containers >= 0.6.8
 - vty >= 6.1
-- deepseq >= 1.5.0.0
 - microlens-mtl
 - microlens-th
 - microlens

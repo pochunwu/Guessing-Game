@@ -42,7 +42,6 @@ library
       base >=4.7 && <5
     , brick >=2.1.1
     , containers >=0.6.8
-    , deepseq >=1.5.0.0
     , microlens
     , microlens-mtl
     , microlens-th
@@ -64,7 +63,6 @@ executable GuessingGame-exe
     , base >=4.7 && <5
     , brick >=2.1.1
     , containers >=0.6.8
-    , deepseq >=1.5.0.0
     , microlens
     , microlens-mtl
     , microlens-th
@@ -90,7 +88,6 @@ test-suite GuessingGame-test
     , base >=4.7 && <5
     , brick >=2.1.1
     , containers >=0.6.8
-    , deepseq >=1.5.0.0
     , microlens
     , microlens-mtl
     , microlens-th

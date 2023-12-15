@@ -7,6 +7,7 @@ data State =
     | Correct
     | Misplaced
     | Incorrect
+    | Normal
     deriving (Eq, Show)
 
 -- showState :: State -> Char

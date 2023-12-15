@@ -124,7 +124,7 @@ initState scr mode difficulty = do
         _sScreen = scr, -- 0 - mode selection, 1 - game
         _sSelectedMode = 0,
         _sSelectedDifficulty = difficulty,
-        _sCorrectWord = [],
+        _sCorrectWord = replicate (length word) '_',
         _sMissplacedChar = Map.empty,
         _sIncorrectChar = []
     }

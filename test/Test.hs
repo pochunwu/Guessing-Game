@@ -40,12 +40,27 @@ testFilterWordsCorrectPlace = TestList [
         filterWordsCorrectPlace ["apple", "ample", "maple"] "x__le" ~?= []
     ]
 
+almostEqual :: Double -> Double -> Bool
+almostEqual x y = abs (x - y) < 1e-6
+
 testScoreWord :: Test
 testScoreWord = TestList [
     "testBasicFunctionality" ~: 
-        scoreWord "hello" "_el__" dummyFreqMap ~?= 0.7999999999999999,
+        almostEqual (scoreWord "hello" "_el__" dummyFreqMap) 0.8 ~? 
+        "Basic functionality test failed: expected 0.8",
     "testEmptyWordPattern" ~: 
-        scoreWord "" "" dummyFreqMap ~?= 0.0
+        scoreWord "" "" dummyFreqMap ~?= 0.0,
+    "testDifferentLengthStrings" ~: 
+        scoreWord "hello" "hell" dummyFreqMap ~?= 0.0,
+    "testNonMatchingCharacters" ~: 
+        scoreWord "hello" "_____" dummyFreqMap ~?= 1.3,
+    "testPartiallyMatchingStrings" ~: 
+        almostEqual (scoreWord "hello" "he___" dummyFreqMap) 1.0 ~? 
+        "Partially matching strings test failed: expected 1.0",
+    "testAllNonMatchingCharacters" ~: 
+        scoreWord "hello" "abcde" dummyFreqMap ~?= 1.3,
+    "testWithSpecialCharacters" ~: 
+        scoreWord "hello!" "hello?" dummyFreqMap ~?= 0.0
     ]
 
 -- Replace this with an actual frequency map used in your tests

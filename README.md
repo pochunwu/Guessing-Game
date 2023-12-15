@@ -40,7 +40,9 @@ or
 cabal run
 ```
 1. Choose Mode:
-![mode](https://github.com/pochunwu/GuessingGame/assets/118617531/f02e95f2-5387-4e33-a869-421d3adde733)
+<p align="center">
+<img src="https://github.com/pochunwu/GuessingGame/assets/118617531/f02e95f2-5387-4e33-a869-421d3adde733" />
+</p>
 2. Choose Difficulty:
 3. Game:
     - Make a guess:

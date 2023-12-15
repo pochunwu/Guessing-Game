@@ -16,14 +16,4 @@ check guess answer = (zipWith go guess answer, guess == answer)
       | g == a          = Correct
       | g `elem` answer = Misplaced
       | otherwise       = Incorrect
-
--- showState :: State -> Char
--- showState Correct   = '🟩'
--- showState Misplaced = '🟨'
--- showState Incorrect = '🟥'
-
--- Helper functions
--- trim :: String -> String
--- trim = unwords . words
-
-
+  

@@ -229,7 +229,7 @@ drawUsage s =
 drawStatus :: Main.State -> T.Widget ()
 drawStatus s =
   withBorderStyle unicode $ border (padLeft (C.Pad 1) $ vBox [ 
-      str ("Status: " ++ s^.sWord),
+      str "Status: ",
       if s^.sGameStatus == Main.Fresh
         -- green text
         then withAttr (A.attrName "ongoing") $ str "On going"

@@ -77,10 +77,33 @@ testFeedbackWord = TestList [
         feedbackWord "abcd" "efgh" ~?= "nnnn"
     ]
 
+testNormalizeFrequencies :: Test
+testNormalizeFrequencies = TestList [
+    "testBasicFunctionality" ~: 
+        normalizeFrequencies (Map.fromList [('a', 2), ('b', 1)]) 3 ~?= 
+        Map.fromList [('a', 2/3), ('b', 1/3)],
+    "testEmptyMap" ~: 
+        normalizeFrequencies Map.empty 0 ~?= Map.empty
+    ]   
 
+testFilterWordsImpossible :: Test
+testFilterWordsImpossible = TestList [
+    "testBasicFunctionality" ~: 
+        filterWordsImpossible ["apple", "orange", "grape"] ['x', 'z'] ~?= 
+        ["apple", "orange", "grape"],
+    "testFiltering" ~: 
+        filterWordsImpossible ["apple", "orange", "grape"] ['p', 'o'] ~?= 
+        [],
+    "testFiltering" ~: 
+        filterWordsImpossible ["apple", "orange", "grape"] ['p', 'r'] ~?= 
+        [],
+     "testFiltering" ~: 
+    filterWordsImpossible ["apple", "orange", "grape"] ['n'] ~?= 
+        ["apple", "grape"]
+    ]
 
 
 -- Function to run all tests
 runTests :: IO Counts
-runTests = runTestTT $ TestList [testCheck, testCalculateLetterFrequencies, testFilterWordsCorrectPlace, testScoreWord, testFeedbackWord]
+runTests = runTestTT $ TestList [testCheck, testCalculateLetterFrequencies, testFilterWordsCorrectPlace, testScoreWord, testFeedbackWord, testNormalizeFrequencies, testFilterWordsImpossible]
 

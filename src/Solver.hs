@@ -1,4 +1,4 @@
-module Solver (calculateEntropyForWords, writeEntropyMapToFile, generateNextGuessList, readFileAsWordScores) where
+module Solver (feedbackWord, scoreWord, calculateLetterFrequencies, calculateLetterFrequencies, filterWordsCorrectPlace, calculateEntropyForWords, writeEntropyMapToFile, generateNextGuessList, readFileAsWordScores) where
 
 -- Given the current state of the guess, and the solver will return the best next guess.
 

@@ -56,6 +56,7 @@ data GameStatus =
     | Correct
     | Incorrect
     | Lose
+    | Lazy
     deriving (Eq, Show)
 
 data State = State
@@ -211,6 +212,8 @@ drawStatus s =
         then withAttr (A.attrName "warning") $ str "Incorrect"
       else if s^.sGameStatus == Main.Lose
         then withAttr (A.attrName "incorrect") $ str "Lose"
+      else if s^.sGameStatus == Main.Lazy
+        then withAttr (A.attrName "ongoing") $ str "Hey you should try it first!"
       else
         str "Unknown",
       padTop (C.Pad 1) $ drawKeyboard s,
@@ -391,13 +394,18 @@ handleEvent e =
   case e of
     T.VtyEvent (V.EvKey V.KEsc []) -> M.halt
     T.VtyEvent (V.EvKey (V.KFun 5) []) -> do
-      incorrectChar <- use sIncorrectChar
-      correctWord <- use sCorrectWord
-      missplacedChar <- use sMissplacedChar
-      wordList <- use sWords
-      let hint = getHint correctWord wordList missplacedChar incorrectChar
-      sInput .= fst hint
-      sWords .= snd hint
+      attemps <- use sAttemps
+      if length attemps == 0
+        then do
+          sGameStatus .= Main.Lazy
+        else do
+          incorrectChar <- use sIncorrectChar
+          correctWord <- use sCorrectWord
+          missplacedChar <- use sMissplacedChar
+          wordList <- use sWords
+          let hint = getHint correctWord wordList missplacedChar incorrectChar
+          sInput .= fst hint
+          sWords .= snd hint
     T.VtyEvent (V.EvKey (V.KChar c) []) -> do
       currentStatus <- use sGameStatus
       if currentStatus == Main.Lose || currentStatus == Main.Correct

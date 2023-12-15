@@ -15,7 +15,6 @@ import Lens.Micro.TH (makeLenses)
 import Lens.Micro.Mtl
 import Control.Monad (void, forever, liftM2)
 import Control.Concurrent (threadDelay, forkIO)
-import Control.DeepSeq (deepseq)
 import Brick.AttrMap
   ( attrMap
   )

@@ -33,3 +33,7 @@ We will create a Multi-Domain Guessing Game with Solver, expanding on the popula
 ```
 stack run
 ```
+Or
+```
+cabal run
+```

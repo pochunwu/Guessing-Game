@@ -239,9 +239,9 @@ drawKeyboard s = do
         Just Guess.Misplaced -> 
           withAttr (A.attrName "misplaced_char") (padLeft (C.Pad 1) $ str [c])
         Just Guess.Incorrect -> 
-          padLeft (C.Pad 1) $ str [c]
-        _ -> 
-          padLeft (C.Pad 1) $ str [c]
+          withAttr (A.attrName "incorrect") $ padLeft (C.Pad 1) $ str [c]
+        Just Guess.Normal -> 
+          id padLeft (C.Pad 1) $ str [c]
 
 drawGame :: Main.State -> T.Widget ()
 drawGame s =
@@ -305,7 +305,7 @@ drawInput s =
 
 unwrapState :: Maybe Guess.State -> Guess.State
 unwrapState (Just a) = a
-unwrapState Nothing = Guess.Incorrect
+unwrapState Nothing = Guess.Normal
 
 handleEnter :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
 handleEnter _ = do

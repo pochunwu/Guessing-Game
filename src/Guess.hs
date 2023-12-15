@@ -1,7 +1,5 @@
 module Guess (State(..), check) where
 
-import Data.Char ( toLower )
-
 data State =
       Fresh
     | Correct
@@ -9,11 +7,6 @@ data State =
     | Incorrect
     | Normal
     deriving (Eq, Show)
-
--- showState :: State -> Char
--- showState Correct   = '🟩'
--- showState Misplaced = '🟨'
--- showState Incorrect = '🟥'
 
 check :: String -> String -> ([State], Bool)
 check guess answer = (zipWith go guess answer, guess == answer)
@@ -24,8 +17,13 @@ check guess answer = (zipWith go guess answer, guess == answer)
       | g `elem` answer = Misplaced
       | otherwise       = Incorrect
 
+-- showState :: State -> Char
+-- showState Correct   = '🟩'
+-- showState Misplaced = '🟨'
+-- showState Incorrect = '🟥'
+
 -- Helper functions
-trim :: String -> String
-trim = unwords . words
+-- trim :: String -> String
+-- trim = unwords . words
 
 

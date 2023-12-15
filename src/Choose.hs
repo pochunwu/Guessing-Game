@@ -1,6 +1,18 @@
-module Choose (genRandomWord, genRandomWordString) where
+module Choose (getWordList, genRandomWord, genRandomWordString) where
 
 import System.Random ( randomRIO )
+
+getWordList :: Int -> IO [String]
+getWordList  n
+    | n == 1 = do
+        readFileToList "data/wordle5.txt"
+    | n == 2 = do
+        readFileToList "data/animals.txt"
+    | n == 3 = do
+        readFileToList "data/citiesUS.txt"
+    | n == 4 = do
+        readFileToList "data/names.txt"
+    | otherwise = error "Invalid Input"
 
 genRandomWord :: Int -> IO String
 genRandomWord  n

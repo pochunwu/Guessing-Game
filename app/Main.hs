@@ -244,7 +244,7 @@ drawKeyboard s = do
 drawGame :: Main.State -> T.Widget ()
 drawGame s =
   withBorderStyle unicode $ border (vBox [ 
-      str "Game: ",
+      str " Game: ",
       vBox (drawAttempts (s^.sAttemps) (s^.sAttempsStatus))
   ])
   where
@@ -294,7 +294,7 @@ drawInput s =
     border $
       vBox [ 
           hBox [
-            str "Guess "
+            str " Guess "
           ],
           hBox [
               drawGuessList s $ s^.sInput

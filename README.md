@@ -56,7 +56,7 @@ stack run
     <img src="https://github.com/pochunwu/GuessingGame/assets/118617531/f4d90f94-82a3-43c8-8b1c-b6c46b085b51" />
 </p>
 
-4. Game: 
+3. Game: 
     - Make a guess:
       <p align="center">
         <img src="https://github.com/pochunwu/GuessingGame/assets/118617531/294c46f1-b265-4dc9-a086-d9cf1da31c36" />
@@ -66,7 +66,7 @@ stack run
         <img src="https://github.com/pochunwu/GuessingGame/assets/118617531/0ecba279-591c-403c-aafe-5e45e78d0fe8" />
       </p>
     
-5. Result:
+4. Result:
    - Success:
       <p align="center">
         <img src="https://github.com/pochunwu/GuessingGame/assets/118617531/7413f5b4-f125-4d55-8c8a-c72070023355" />

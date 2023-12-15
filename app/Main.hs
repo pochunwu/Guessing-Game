@@ -206,7 +206,8 @@ drawUsage s =
       str "Usage: ",
       str "Press ESC to quit",
       str "Press ENTER to submit",
-      str "Press DEL to delete",
+      str "Press BACKSPACE to delete",
+      str "Press F5 to get hint",
       str "Press any other key to input"
   ])
 

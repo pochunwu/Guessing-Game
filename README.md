@@ -1,17 +1,25 @@
 # Multi-Domain Guessing Game with Solver
 UCSD CSE 230 (Fall 2023) Final Project
+
 ## Members
 - Xujie Chen
 - Xiaochuan Yu
 - Runlong Su
 - Po-Chun Wu
+
 ## Proposal (11/17)
-We will create a Multi-Domain Guessing Game with Solver, expanding on the popular Wordle game. The project aims to create an immersive gaming experience by allowing users to guess words from diverse datasets like names and countries. A key feature is the implementation of an intelligent solver that strategically suggests the best next guess based on the current game situation. Users could turn on the solver to enhance their guessing strategies.
-## Work Division (12/1 Update)
+- We will create a Multi-Domain Guessing Game with Solver, expanding on the popular Wordle game. The project aims to create an immersive gaming experience by allowing users to guess words from diverse datasets like names and countries. A key feature is the implementation of an intelligent solver that strategically suggests the best next guess based on the current game situation. Users could turn on the solver to enhance their guessing strategies. 
+- What makes our project different from [Wordle](https://www.nytimes.com/games/wordle/index.html)?
+  - Solver (hints)
+  - Different modes
+  - Difficulty levels
+
+## Collaboration (12/1 Update)
 - Xujie Chen: Solver
 - Xiaochuan Yu: UI (`Brick` Library)
 - Runlong Su: Testing
 - Po-Chun Wu: Main Program
+
 ## Key Components (12/1 Update)
 ```
 .
@@ -31,15 +39,13 @@ We will create a Multi-Domain Guessing Game with Solver, expanding on the popula
 └── test
     └── Test.hs
 ```
+
 ## Let's Guess!
 ```
 stack run
 ```
-or
-```
-cabal run
-```
-### User Interface
+
+## User Interface
 1. Choose Mode: 
 <p align="center">
     <img src="https://github.com/pochunwu/GuessingGame/assets/118617531/6c576f60-f05b-4807-95ac-50eb563485a0" />
@@ -70,4 +76,17 @@ cabal run
         <img src="https://github.com/pochunwu/GuessingGame/assets/118617531/bfc3b8c3-27dc-4889-b69e-065e165ef037" />
       </p>
 
+## Testing
+```
+stack test
+```
+## Libraries
+- base
+- brick 
+- containers
+- microlens
+- microlens-mtl
+- microlens-th
+- random 
+- vty
 

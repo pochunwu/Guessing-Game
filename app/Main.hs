@@ -50,6 +50,7 @@ import qualified Data.Map as Map
 import Guess
 import Choose
 import Solver
+import Debug.Trace(trace)
 
 data GameStatus =       
       Fresh
@@ -71,7 +72,7 @@ data State = State
     _sScreen :: Int,
     _sSelectedMode :: Int,
     _sSelectedDifficulty :: Int,
-    _sCorrectWord :: [(Int, Char)],
+    _sCorrectWord :: String,
     _sMissplacedChar :: Map.Map Char [Int],
     _sIncorrectChar :: [Char]
   }
@@ -81,9 +82,10 @@ makeLenses ''Main.State
 initState :: Int -> Int -> Int -> IO Main.State
 initState scr mode difficulty = do
     word <- genRandomWord mode
+    wordList <- Choose.getWordList mode
     let wordsize = length word
     return $ Main.State {
-        _sWords = [],
+        _sWords = wordList,
         _sWord = word, -- word,
         _sWordSize = wordsize, --length word,
         _sInput = "",
@@ -315,17 +317,12 @@ unwrapState :: Maybe Guess.State -> Guess.State
 unwrapState (Just a) = a
 unwrapState Nothing = Guess.Normal
 
-getHint :: [(Int, Char)] -> [String] -> Map.Map Char [Int] -> [Char] -> String
-getHint _ [] _ _ = ""
-getHint correctWordList attemps m incorrect = bestHint
+getHint :: String -> [String] -> Map.Map Char [Int] -> [Char] -> (String, [String])
+getHint _ [] _ _ = ("", [])
+getHint correctWordPattern oldWordList m incorrect = (bestHint, newWordList)
   where 
-    wordlist = attemps
-    stringPattern = replicate (length (head wordlist)) '_'
-    bestHint = fst (head (Solver.generateNextGuessList wordlist (replace stringPattern correctWordList) m incorrect))
-    replace s [] = s
-    replace s ((i, c):xs) = replace s' xs
-      where
-        s' = take i s ++ [c] ++ drop (i + 1) s
+    newWordList = map fst (Solver.generateNextGuessList oldWordList correctWordPattern m incorrect)
+    bestHint = head newWordList
 
 handleEnter :: T.BrickEvent () AppEvent -> T.EventM () Main.State ()
 handleEnter _ = do
@@ -361,28 +358,16 @@ handleEnter _ = do
       -- update keyboard state, if the char is already correct, then don't update
       sKeyboardState %= map (\(c, s) -> if s == Guess.Correct then (c, s) else (c, unwrapState $ lookup c currentState))
       -- update correct word
-      correctWord <- use sCorrectWord
-      misplacedChar <- use sMissplacedChar
-      incorrectChar <- use sIncorrectChar
-      let correctWord' = genCorrectWordListWithIndex 0 currentState
-      sCorrectWord .= correctWord ++ correctWord'
-      sMissplacedChar .= updateMisplacedChar currentState misplacedChar
-      sIncorrectChar .= updateIncorrectChar currentState incorrectChar
+      let correctWord' = genCorrectWordPattern currentState
+      sCorrectWord .= correctWord'
+      sMissplacedChar .= updateMisplacedChar currentState (Map.fromList [])
+      sIncorrectChar .= updateIncorrectChar currentState []
       M.invalidateCache
     else do
       return ()
     where
-      genCorrectWordListWithIndex :: Int -> [(Char, Guess.State)] -> [(Int, Char)]
-      genCorrectWordListWithIndex _ [] = []
-      genCorrectWordListWithIndex i xs =
-        if s == Guess.Correct
-          then
-            (i, c) : genCorrectWordListWithIndex (i + 1) xs'
-          else
-            genCorrectWordListWithIndex (i + 1) xs'
-        where
-          (c, s) = head xs
-          xs' = tail xs
+      genCorrectWordPattern :: [(Char, Guess.State)] -> String
+      genCorrectWordPattern tuples = [if state == Guess.Correct then c else '_' | (c, state) <- tuples]
       updateMisplacedChar :: [(Char, Guess.State)] -> Map Char [Int] -> Map Char [Int]
       updateMisplacedChar [] m = m
       updateMisplacedChar ((c, s):xs) m =
@@ -392,7 +377,7 @@ handleEnter _ = do
           else
             updateMisplacedChar xs m
         where
-          m' = Map.insertWith (++) c [i] m
+          m' = Map.insertWith (++) c [i+1] m
           i = length m'
       updateIncorrectChar :: [(Char, Guess.State)] -> [Char] -> [Char]
       updateIncorrectChar [] l = l
@@ -413,10 +398,10 @@ handleEvent e =
       incorrectChar <- use sIncorrectChar
       correctWord <- use sCorrectWord
       missplacedChar <- use sMissplacedChar
-      attemps <- use sAttemps
-      difficulty <- use sSelectedDifficulty
-      let hint = getHint correctWord attemps missplacedChar incorrectChar
-      sInput .= hint
+      wordList <- use sWords
+      let hint = getHint correctWord wordList missplacedChar incorrectChar
+      sInput .= fst hint
+      sWords .= snd hint
     T.VtyEvent (V.EvKey (V.KChar c) []) -> do
       currentStatus <- use sGameStatus
       if currentStatus == Main.Lose || currentStatus == Main.Correct

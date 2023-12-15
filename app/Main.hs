@@ -410,7 +410,7 @@ handleEvent e =
       correctWord <- use sCorrectWord
       missplacedChar <- use sMissplacedChar
       wordList <- use sWords
-      let hint = trace (show correctWord ++ show missplacedChar ++ show incorrectChar)getHint correctWord wordList missplacedChar incorrectChar
+      let hint = getHint correctWord wordList missplacedChar incorrectChar
       sInput .= fst hint
       sWords .= snd hint
     T.VtyEvent (V.EvKey (V.KChar c) []) -> do
